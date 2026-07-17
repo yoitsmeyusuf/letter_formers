@@ -18,7 +18,7 @@ import torch
 
 from config import ModelConfig
 from model import TinyQwen
-from tokenizer import CharTokenizer
+from bpe_tokenizer import BPETokenizer
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "titles.txt")
 BATCH_SIZE = 64
@@ -31,7 +31,7 @@ SEED = 1337
 device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.manual_seed(SEED)
 
-tokenizer = CharTokenizer.from_file(DATA_FILE)
+tokenizer = BPETokenizer.from_file(DATA_FILE, vocab_size=256)
 vocab_size = tokenizer.vocab_size
 
 text = open(DATA_FILE, encoding="utf-8").read()
@@ -91,6 +91,7 @@ print("\nsample names:")
 for name in sample_names(10):
     print("  ", name)
 
-torch.save({"model": model.state_dict(), "chars": tokenizer.chars, "cfg": cfg},
+torch.save({"model": model.state_dict(), "tokenizer_state": tokenizer.state_dict(), "cfg": cfg},
            "tiny_qwen3.pt")
+tokenizer.save_json(os.path.join(os.path.dirname(__file__), "bpe_tokenizer.json"))
 print("\nsaved checkpoint to tiny_qwen3.pt")

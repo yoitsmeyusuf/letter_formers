@@ -11,6 +11,7 @@ import sys
 import torch
 
 from model import TinyQwen
+from bpe_tokenizer import BPETokenizer
 from tokenizer import CharTokenizer
 
 CHECKPOINT = "tiny_qwen.pt"
@@ -18,7 +19,13 @@ CHECKPOINT = "tiny_qwen.pt"
 
 def load():
     ckpt = torch.load(CHECKPOINT, map_location="cpu", weights_only=False)
-    tokenizer = CharTokenizer(ckpt["chars"])
+    tokenizer_state = ckpt.get("tokenizer_state")
+    if tokenizer_state is not None and tokenizer_state.get("type") == "bpe":
+        tokenizer = BPETokenizer.from_state(tokenizer_state)
+    elif "chars" in ckpt:
+        tokenizer = CharTokenizer(ckpt["chars"])
+    else:
+        raise KeyError("checkpoint does not contain a tokenizer state")
     model = TinyQwen(ckpt["cfg"])
     model.load_state_dict(ckpt["model"])
     model.eval()
